@@ -1,0 +1,213 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Download, Share2, BarChart3, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const Report = () => {
+  const navigate = useNavigate();
+
+  const reportData = {
+    assessmentDate: new Date().toLocaleDateString(),
+    metalType: "Aluminium",
+    totalEmissions: 87,
+    energySaved: 312,
+    wasteReduction: 18,
+    circularityScore: 60,
+  };
+
+  const recommendations = [
+    {
+      title: "Increase Recycled Content",
+      description: "Aim for 75%+ recycled content to reduce emissions by an additional 25%",
+      impact: "High",
+      effort: "Medium"
+    },
+    {
+      title: "Optimize Transportation",
+      description: "Switch from truck to rail transport for distances over 500km",
+      impact: "Medium", 
+      effort: "Low"
+    },
+    {
+      title: "Renewable Energy Integration",
+      description: "Use renewable energy sources for processing operations",
+      impact: "High",
+      effort: "High"
+    },
+    {
+      title: "End-of-Life Planning",
+      description: "Implement take-back programs for product lifecycle management",
+      impact: "Medium",
+      effort: "Medium"
+    }
+  ];
+
+  const handleDownloadPDF = () => {
+    // Placeholder for PDF generation
+    console.log("Generating PDF report...");
+  };
+
+  return (
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="outline" onClick={() => navigate("/results")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Results
+          </Button>
+          <div>
+            <h1 className="text-4xl font-bold text-foreground">
+              Detailed LCA Report
+            </h1>
+            <p className="text-xl text-muted-foreground mt-2">
+              Comprehensive analysis and actionable recommendations
+            </p>
+          </div>
+        </div>
+
+        {/* Report Header */}
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-accent">Assessment Summary</CardTitle>
+                <CardDescription>
+                  Generated on {reportData.assessmentDate}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+                <Button 
+                  onClick={handleDownloadPDF}
+                  className="bg-gradient-accent"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-foreground">{reportData.totalEmissions} kg</div>
+                <div className="text-sm text-muted-foreground">CO₂ Emissions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-accent">{reportData.energySaved} kWh</div>
+                <div className="text-sm text-muted-foreground">Energy Saved</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-foreground">{reportData.wasteReduction} kg</div>
+                <div className="text-sm text-muted-foreground">Waste Reduced</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-accent">{reportData.circularityScore}%</div>
+                <div className="text-sm text-muted-foreground">Circularity</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Methodology */}
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <CardTitle className="text-accent flex items-center">
+              <BarChart3 className="h-5 w-5 mr-2" />
+              Assessment Methodology
+            </CardTitle>
+            <CardDescription>
+              Standards and data sources used in this analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold text-foreground mb-2">LCA Standards</h4>
+              <p className="text-muted-foreground text-sm">
+                This assessment follows ISO 14040 and ISO 14044 standards for Life Cycle Assessment. 
+                Data sources include Ecoinvent database, industry-specific EPDs, and regional energy mix data.
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold text-foreground mb-2">System Boundaries</h4>
+              <p className="text-muted-foreground text-sm">
+                Cradle-to-gate analysis including raw material extraction, processing, manufacturing, 
+                and transportation to point of use. End-of-life impacts estimated based on regional recycling rates.
+              </p>
+            </div>
+
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold text-foreground mb-2">Impact Categories</h4>
+              <p className="text-muted-foreground text-sm">
+                Global Warming Potential (GWP 100), Primary Energy Demand, Waste Generation, 
+                and Circularity Indicator based on Ellen MacArthur Foundation methodology.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recommendations */}
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <CardTitle className="text-accent flex items-center">
+              <FileText className="h-5 w-5 mr-2" />
+              Recommendations
+            </CardTitle>
+            <CardDescription>
+              Actionable steps to improve environmental performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {recommendations.map((rec, index) => (
+                <div key={index} className="border border-border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-foreground">{rec.title}</h4>
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        rec.impact === 'High' ? 'bg-accent/20 text-accent' :
+                        rec.impact === 'Medium' ? 'bg-primary/20 text-primary' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {rec.impact} Impact
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        rec.effort === 'High' ? 'bg-destructive/20 text-destructive' :
+                        rec.effort === 'Medium' ? 'bg-primary/20 text-primary' :
+                        'bg-accent/20 text-accent'
+                      }`}>
+                        {rec.effort} Effort
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm">{rec.description}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer Note */}
+        <Card className="shadow-card">
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm">
+                <strong>Note:</strong> This report is generated using standard LCA factors combined with your specific inputs. 
+                For detailed project-specific analysis, consider engaging with certified LCA practitioners.
+              </p>
+              <p className="text-xs mt-2">
+                Report generated by LCA Tool - AI-driven sustainability assessment platform
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Report;
