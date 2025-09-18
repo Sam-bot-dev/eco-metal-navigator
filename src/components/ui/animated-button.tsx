@@ -14,8 +14,28 @@ export const AnimatedButton = ({
   loading = false,
   pulse = false,
   float = false,
+  asChild = false,
   ...props 
 }: AnimatedButtonProps) => {
+  if (asChild) {
+    return (
+      <Button
+        {...props}
+        asChild
+        disabled={loading || props.disabled}
+        className={cn(
+          "relative overflow-hidden transition-all duration-300 ease-out transform hover:scale-105 active:scale-95",
+          loading && "cursor-not-allowed",
+          float && "hover-float",
+          pulse && "pulse-glow",
+          className
+        )}
+      >
+        {children}
+      </Button>
+    );
+  }
+
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
