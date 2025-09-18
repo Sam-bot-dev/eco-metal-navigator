@@ -85,6 +85,12 @@ export default {
         animation: {
           "accordion-down": "accordion-down 0.2s ease-out",
           "accordion-up": "accordion-up 0.2s ease-out",
+          "float": "float 6s ease-in-out infinite",
+          "pulse-glow": "pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          "particles": "particles 20s linear infinite",
+          "stagger-in": "stagger-in 0.6s ease-out forwards",
+          "spin-slow": "spin 3s linear infinite",
+          "bounce-gentle": "bounce 2s infinite",
         },
         backgroundImage: {
           "gradient-hero": "var(--gradient-hero)",
