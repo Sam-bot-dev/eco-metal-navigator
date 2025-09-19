@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,10 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { ArrowRight, Upload, MapPin } from "lucide-react";
+import { EnhancedCard } from "@/components/ui/enhanced-card";
+import { ProgressTracker } from "@/components/ui/progress-tracker";
+import { EnhancedInput } from "@/components/ui/enhanced-input";
+import { ArrowRight, Upload, MapPin, Recycle, Factory, Truck, Save, Calculator, BarChart3 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const InputPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     metalType: "",
     currentlyRecycled: "",
@@ -22,6 +27,10 @@ const InputPage = () => {
     transportMode: "",
     location: "",
   });
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [estimatedCarbon, setEstimatedCarbon] = useState<number | null>(null);
 
   // Metal-specific recycling data
   const metalRecyclingData = {
@@ -48,36 +57,180 @@ const InputPage = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  // Form validation
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.metalType) errors.metalType = "Metal type is required";
+    if (!formData.currentlyRecycled) errors.currentlyRecycled = "Current recycled content is required";
+    if (!formData.quantity) errors.quantity = "Quantity is required";
+    if (!formData.transportMode) errors.transportMode = "Transport mode is required";
+    if (!formData.location) errors.location = "Location is required";
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Calculate estimated carbon footprint
+  const calculateEstimatedCarbon = () => {
+    if (!formData.metalType || !formData.quantity) return null;
+    
+    const baseCarbonPerKg = {
+      aluminium: 8.2,
+      copper: 3.9,
+      steel: 2.5,
+      lithium: 12.8,
+      "rare-earths": 15.2
+    };
+    
+    const base = baseCarbonPerKg[formData.metalType as keyof typeof baseCarbonPerKg] || 5;
+    const quantity = parseFloat(formData.quantity) || 0;
+    const recyclingReduction = (parseFloat(formData.currentlyRecycled) + formData.additionalRecycling[0]) / 100;
+    const transportFactor = formData.distance[0] / 1000;
+    
+    return (base * quantity * (1 - recyclingReduction * 0.6) + transportFactor * 0.1).toFixed(2);
+  };
+
+  // Update estimated carbon when relevant fields change
+  useEffect(() => {
+    const estimated = calculateEstimatedCarbon();
+    setEstimatedCarbon(estimated ? parseFloat(estimated) : null);
+  }, [formData.metalType, formData.quantity, formData.currentlyRecycled, formData.additionalRecycling, formData.distance]);
+
+  // Progress tracking
+  const steps = [
+    {
+      id: "metal",
+      title: "Metal Info",
+      description: "Type & recycling",
+      completed: !!(formData.metalType && formData.currentlyRecycled),
+      current: currentStep === 0
+    },
+    {
+      id: "processing",
+      title: "Processing",
+      description: "Quantity & method",
+      completed: !!(formData.quantity && formData.formType),
+      current: currentStep === 1
+    },
+    {
+      id: "transport",
+      title: "Transport",
+      description: "Logistics",
+      completed: !!(formData.transportMode && formData.location),
+      current: currentStep === 2
+    },
+    {
+      id: "review",
+      title: "Review",
+      description: "Final check",
+      completed: false,
+      current: currentStep === 3
+    }
+  ];
+
+  // Save draft functionality
+  const saveDraft = () => {
+    localStorage.setItem("lcaFormDraft", JSON.stringify(formData));
+    toast({
+      title: "Draft Saved",
+      description: "Your progress has been saved locally.",
+    });
+  };
+
+  // Load draft functionality
+  const loadDraft = () => {
+    const draft = localStorage.getItem("lcaFormDraft");
+    if (draft) {
+      setFormData(JSON.parse(draft));
+      toast({
+        title: "Draft Loaded",
+        description: "Your previous progress has been restored.",
+      });
+    }
   };
 
   const handleSubmit = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Form Incomplete",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Store form data in localStorage for results page
-    localStorage.setItem("lcaFormData", JSON.stringify(formData));
+    localStorage.setItem("lcaFormData", JSON.stringify({
+      ...formData,
+      estimatedCarbon,
+      submittedAt: new Date().toISOString()
+    }));
+    
+    toast({
+      title: "Assessment Submitted",
+      description: "Redirecting to results...",
+    });
+    
     navigate("/results");
   };
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            LCA Assessment Input
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Header */}
+        <div className="text-center mb-8 animate-fadeInUp">
+          <h1 className="text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            LCA Assessment Tool
           </h1>
-          <p className="text-xl text-muted-foreground">
-            Provide details about your metal for environmental impact analysis
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Comprehensive environmental impact analysis for metal lifecycle assessment
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        {/* Progress Tracker */}
+        <div className="mb-8">
+          <ProgressTracker steps={steps} />
+        </div>
+
+        {/* Action Bar */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={loadDraft}>
+              <Upload className="w-4 h-4 mr-2" />
+              Load Draft
+            </Button>
+            <Button variant="outline" size="sm" onClick={saveDraft}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          </div>
+          
+          {estimatedCarbon && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
+              <Calculator className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">
+                Est. Carbon: <span className="text-primary font-bold">{estimatedCarbon} kg CO₂</span>
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Metal Information */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-accent">Metal Information</CardTitle>
-              <CardDescription>
-                Basic details about the metal you're assessing
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <EnhancedCard 
+            delay={0}
+            title="Metal Information"
+            description="Basic details about the metal you're assessing"
+            icon={<Recycle className="w-5 h-5" />}
+            progress={formData.metalType && formData.currentlyRecycled ? 100 : 0}
+          >
               <div className="space-y-2">
                 <Label htmlFor="metalType">Metal Type</Label>
                 <Select onValueChange={(value) => handleInputChange("metalType", value)}>
@@ -94,21 +247,24 @@ const InputPage = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="currentlyRecycled">Currently Recycled Content (%)</Label>
-                <Input
-                  id="currentlyRecycled"
-                  type="number"
-                  placeholder={`Average for ${formData.metalType || 'this metal'}: ${getCurrentMetalData().avgCurrent}%`}
-                  value={formData.currentlyRecycled}
-                  onChange={(e) => handleInputChange("currentlyRecycled", e.target.value)}
-                  min="0"
-                  max={getCurrentMetalData().maxRecycling}
-                />
-                <p className="text-xs text-muted-foreground">
-                  How much of this metal is already recycled content?
-                </p>
-              </div>
+              <EnhancedInput
+                label="Currently Recycled Content (%)"
+                placeholder={`Average for ${formData.metalType || 'this metal'}: ${getCurrentMetalData().avgCurrent}%`}
+                value={formData.currentlyRecycled}
+                onChange={(value) => handleInputChange("currentlyRecycled", value)}
+                type="number"
+                min="0"
+                max={getCurrentMetalData().maxRecycling.toString()}
+                helpText="How much of this metal is already recycled content?"
+                required
+                validation={(value) => {
+                  if (!value) return "This field is required";
+                  const num = parseFloat(value);
+                  if (isNaN(num) || num < 0) return "Must be a positive number";
+                  if (num > getCurrentMetalData().maxRecycling) return `Cannot exceed ${getCurrentMetalData().maxRecycling}%`;
+                  return null;
+                }}
+              />
 
               <div className="space-y-3">
                 <Label>
@@ -149,27 +305,32 @@ const InputPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+          </EnhancedCard>
 
           {/* Quantity & Processing */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-accent">Quantity & Processing</CardTitle>
-              <CardDescription>
-                Production and processing details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity (kg)</Label>
-                <Input
-                  id="quantity"
-                  placeholder="Enter weight in kg"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", e.target.value)}
-                />
-              </div>
+          <EnhancedCard 
+            delay={100}
+            title="Quantity & Processing"
+            description="Production and processing details"
+            icon={<Factory className="w-5 h-5" />}
+            progress={formData.quantity && formData.formType ? 100 : 0}
+          >
+              <EnhancedInput
+                label="Quantity (kg)"
+                placeholder="Enter weight in kg"
+                value={formData.quantity}
+                onChange={(value) => handleInputChange("quantity", value)}
+                type="number"
+                min="0"
+                helpText="Total weight of material for assessment"
+                required
+                validation={(value) => {
+                  if (!value) return "Quantity is required";
+                  const num = parseFloat(value);
+                  if (isNaN(num) || num <= 0) return "Must be a positive number";
+                  return null;
+                }}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="processingRoute">Processing Route (Optional)</Label>
@@ -201,18 +362,16 @@ const InputPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+          </EnhancedCard>
 
           {/* Transport & Location */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-accent">Transport Information</CardTitle>
-              <CardDescription>
-                Logistics and transportation details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <EnhancedCard 
+            delay={200}
+            title="Transport Information"
+            description="Logistics and transportation details"
+            icon={<Truck className="w-5 h-5" />}
+            progress={formData.transportMode && formData.location ? 100 : 0}
+          >
               <div className="space-y-3">
                 <Label>Transport Distance: {formData.distance[0]} km</Label>
                 <Slider
@@ -251,40 +410,68 @@ const InputPage = () => {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </EnhancedCard>
 
-          {/* File Upload */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-accent">Material Image</CardTitle>
-              <CardDescription>
-                Upload an image of your material (optional)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-accent/50 transition-colors">
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG up to 10MB
-                </p>
+          {/* Assessment Summary */}
+          <EnhancedCard 
+            delay={300}
+            title="Assessment Summary"
+            description="Review your input and estimated impact"
+            icon={<BarChart3 className="w-5 h-5" />}
+            className="lg:col-span-2"
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                <div className="text-sm text-muted-foreground">Metal Type</div>
+                <div className="font-semibold text-primary capitalize">
+                  {formData.metalType || "Not selected"}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="p-4 bg-blue-500/5 rounded-lg border border-blue-500/10">
+                <div className="text-sm text-muted-foreground">Total Recycling</div>
+                <div className="font-semibold text-blue-600">
+                  {formData.currentlyRecycled ? 
+                    `${parseFloat(formData.currentlyRecycled) + formData.additionalRecycling[0]}%` : 
+                    "Not set"
+                  }
+                </div>
+              </div>
+              <div className="p-4 bg-green-500/5 rounded-lg border border-green-500/10">
+                <div className="text-sm text-muted-foreground">Quantity</div>
+                <div className="font-semibold text-green-600">
+                  {formData.quantity ? `${formData.quantity} kg` : "Not set"}
+                </div>
+              </div>
+              <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/10">
+                <div className="text-sm text-muted-foreground">Est. Carbon Impact</div>
+                <div className="font-semibold text-orange-600">
+                  {estimatedCarbon ? `${estimatedCarbon} kg CO₂` : "Calculating..."}
+                </div>
+              </div>
+            </div>
+          </EnhancedCard>
         </div>
 
         <div className="flex justify-center mt-12">
-          <Button
-            onClick={handleSubmit}
-            size="lg"
-            className="bg-gradient-accent hover:shadow-glow transition-all duration-300"
-          >
-            View Results
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={saveDraft}
+              className="hover:bg-secondary/50"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Save Draft
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              size="lg"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 px-8"
+            >
+              Generate Assessment
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
