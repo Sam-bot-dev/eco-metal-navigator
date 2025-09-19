@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { ProgressTracker } from "@/components/ui/progress-tracker";
 import { EnhancedInput } from "@/components/ui/enhanced-input";
+import { PhotoUpload } from "@/components/ui/photo-upload";
 import { ArrowRight, Upload, MapPin, Recycle, Factory, Truck, Save, Calculator, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,8 @@ const InputPage = () => {
     transportMode: "",
     location: "",
   });
+
+  const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -185,7 +188,7 @@ const InputPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-8 animate-fadeInUp">
+        <div className="text-center mb-8 animate-slideInFromBottom">
           <h1 className="text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             LCA Assessment Tool
           </h1>
@@ -230,6 +233,7 @@ const InputPage = () => {
             description="Basic details about the metal you're assessing"
             icon={<Recycle className="w-5 h-5" />}
             progress={formData.metalType && formData.currentlyRecycled ? 100 : 0}
+            className="animate-scaleIn [animation-delay:100ms]"
           >
               <div className="space-y-2">
                 <Label htmlFor="metalType">Metal Type</Label>
@@ -314,6 +318,7 @@ const InputPage = () => {
             description="Production and processing details"
             icon={<Factory className="w-5 h-5" />}
             progress={formData.quantity && formData.formType ? 100 : 0}
+            className="animate-scaleIn [animation-delay:200ms]"
           >
               <EnhancedInput
                 label="Quantity (kg)"
@@ -371,6 +376,7 @@ const InputPage = () => {
             description="Logistics and transportation details"
             icon={<Truck className="w-5 h-5" />}
             progress={formData.transportMode && formData.location ? 100 : 0}
+            className="animate-scaleIn [animation-delay:300ms]"
           >
               <div className="space-y-3">
                 <Label>Transport Distance: {formData.distance[0]} km</Label>
@@ -412,13 +418,20 @@ const InputPage = () => {
               </div>
           </EnhancedCard>
 
+          {/* Photo Upload Section */}
+          <PhotoUpload 
+            onFilesChange={setUploadedPhotos}
+            maxFiles={5}
+            className="animate-scaleIn [animation-delay:400ms]"
+          />
+
           {/* Assessment Summary */}
           <EnhancedCard 
             delay={300}
             title="Assessment Summary"
             description="Review your input and estimated impact"
             icon={<BarChart3 className="w-5 h-5" />}
-            className="lg:col-span-2"
+            className="lg:col-span-2 animate-scaleIn [animation-delay:500ms]"
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
