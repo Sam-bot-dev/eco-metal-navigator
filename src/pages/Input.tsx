@@ -12,7 +12,8 @@ const InputPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     metalType: "",
-    recycledPercent: [50],
+    currentlyRecycled: "",
+    additionalRecycling: [0],
     formType: "",
     quantity: "",
     processingRoute: "",
@@ -21,6 +22,25 @@ const InputPage = () => {
     transportMode: "",
     location: "",
   });
+
+  // Metal-specific recycling data
+  const metalRecyclingData = {
+    aluminium: { maxRecycling: 95, avgCurrent: 35, unit: "%" },
+    copper: { maxRecycling: 90, avgCurrent: 30, unit: "%" },
+    steel: { maxRecycling: 85, avgCurrent: 25, unit: "%" },
+    lithium: { maxRecycling: 70, avgCurrent: 5, unit: "%" },
+    "rare-earths": { maxRecycling: 20, avgCurrent: 1, unit: "%" },
+  };
+
+  const getCurrentMetalData = () => {
+    return metalRecyclingData[formData.metalType as keyof typeof metalRecyclingData] || { maxRecycling: 100, avgCurrent: 0, unit: "%" };
+  };
+
+  const getMaxAdditionalRecycling = () => {
+    const currentRecycled = parseFloat(formData.currentlyRecycled) || 0;
+    const metalData = getCurrentMetalData();
+    return Math.max(0, metalData.maxRecycling - currentRecycled);
+  };
 
   const handleSliderChange = (field: string, value: number[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -74,15 +94,45 @@ const InputPage = () => {
                 </Select>
               </div>
 
-              <div className="space-y-3">
-                <Label>Recycled Content Desired: {formData.recycledPercent[0]}%</Label>
-                <Slider
-                  value={formData.recycledPercent}
-                  onValueChange={(value) => handleSliderChange("recycledPercent", value)}
-                  max={100}
-                  step={5}
-                  className="w-full"
+              <div className="space-y-2">
+                <Label htmlFor="currentlyRecycled">Currently Recycled Content (%)</Label>
+                <Input
+                  id="currentlyRecycled"
+                  type="number"
+                  placeholder={`Average for ${formData.metalType || 'this metal'}: ${getCurrentMetalData().avgCurrent}%`}
+                  value={formData.currentlyRecycled}
+                  onChange={(e) => handleInputChange("currentlyRecycled", e.target.value)}
+                  min="0"
+                  max={getCurrentMetalData().maxRecycling}
                 />
+                <p className="text-xs text-muted-foreground">
+                  How much of this metal is already recycled content?
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label>
+                  Additional Recycling Potential: {formData.additionalRecycling[0]}%
+                  {formData.currentlyRecycled && (
+                    <span className="text-sm text-muted-foreground ml-2">
+                      (Total: {parseFloat(formData.currentlyRecycled || "0") + formData.additionalRecycling[0]}%)
+                    </span>
+                  )}
+                </Label>
+                <Slider
+                  value={formData.additionalRecycling}
+                  onValueChange={(value) => handleSliderChange("additionalRecycling", value)}
+                  max={getMaxAdditionalRecycling()}
+                  step={1}
+                  className="w-full"
+                  disabled={!formData.metalType || !formData.currentlyRecycled}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.metalType 
+                    ? `Maximum additional recycling for ${formData.metalType}: ${getMaxAdditionalRecycling()}%`
+                    : "Select a metal type to see recycling potential"
+                  }
+                </p>
               </div>
 
               <div className="space-y-2">
