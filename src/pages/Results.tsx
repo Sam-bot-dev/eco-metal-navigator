@@ -24,16 +24,26 @@ const Results = () => {
     { category: "End-of-Life", new: 10, recycled: 5 },
   ];
 
+  // Calculate total recycled percentage from the new form structure
+  const getTotalRecycledPercent = () => {
+    if (!formData) return 50;
+    const current = parseFloat(formData.currentRecycledContent) || 0;
+    const additional = parseFloat(formData.additionalRecyclingPotential) || 0;
+    return Math.min(current + additional, 100); // Cap at 100%
+  };
+
+  const totalRecycledPercent = getTotalRecycledPercent();
+
   const circularityData = [
-    { name: "Virgin Material", value: formData ? 100 - formData.recycledPercent[0] : 50, color: "#dc2626" },
-    { name: "Recycled Content", value: formData ? formData.recycledPercent[0] : 50, color: "hsl(var(--accent))" },
+    { name: "Virgin Material", value: 100 - totalRecycledPercent, color: "#dc2626" },
+    { name: "Recycled Content", value: totalRecycledPercent, color: "hsl(var(--accent))" },
   ];
 
   const metrics = {
-    co2Emissions: formData ? Math.round(145 * (1 - formData.recycledPercent[0] / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 87,
-    energyUse: formData ? Math.round(780 * (1 - formData.recycledPercent[0] / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 468,
-    wasteGenerated: formData ? Math.round(45 * (1 - formData.recycledPercent[0] / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 27,
-    circularityScore: formData ? Math.round(20 + (formData.recycledPercent[0] * 0.8)) : 60,
+    co2Emissions: formData ? Math.round(145 * (1 - totalRecycledPercent / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 87,
+    energyUse: formData ? Math.round(780 * (1 - totalRecycledPercent / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 468,
+    wasteGenerated: formData ? Math.round(45 * (1 - totalRecycledPercent / 100) * (parseFloat(formData.quantity) / 100 || 1)) : 27,
+    circularityScore: formData ? Math.round(20 + (totalRecycledPercent * 0.8)) : 60,
   };
 
   return (
@@ -174,8 +184,8 @@ const Results = () => {
             <div className="bg-muted/50 p-4 rounded-lg">
               <h4 className="font-semibold text-foreground mb-2">Environmental Benefits</h4>
               <p className="text-muted-foreground">
-                Using {formData?.recycledPercent[0] || 50}% recycled content reduces CO₂ emissions by approximately{" "}
-                {Math.round((formData?.recycledPercent[0] || 50) * 0.6)}% compared to virgin material production.
+                Using {totalRecycledPercent}% recycled content reduces CO₂ emissions by approximately{" "}
+                {Math.round(totalRecycledPercent * 0.6)}% compared to virgin material production.
               </p>
             </div>
             
