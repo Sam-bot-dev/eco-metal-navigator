@@ -159,6 +159,64 @@ const InputPage = () => {
     }
   };
 
+  // Auto-detect location
+  const handleLocationDetect = () => {
+    if (navigator.geolocation) {
+      toast({
+        title: "Detecting Location",
+        description: "Please allow location access...",
+      });
+      
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            // Use reverse geocoding to get city/country
+            const { latitude, longitude } = position.coords;
+            
+            // Simple approximation - in a real app, you'd use a geocoding service
+            const locationString = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+            
+            handleInputChange("location", locationString);
+            toast({
+              title: "Location Detected",
+              description: `Coordinates: ${locationString}`,
+            });
+          } catch (error) {
+            toast({
+              title: "Location Error",
+              description: "Could not determine your location.",
+              variant: "destructive"
+            });
+          }
+        },
+        (error) => {
+          let message = "Location access denied.";
+          if (error.code === error.TIMEOUT) {
+            message = "Location request timed out.";
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            message = "Location information unavailable.";
+          }
+          
+          toast({
+            title: "Location Error", 
+            description: message,
+            variant: "destructive"
+          });
+        },
+        {
+          timeout: 10000,
+          enableHighAccuracy: true
+        }
+      );
+    } else {
+      toast({
+        title: "Not Supported",
+        description: "Geolocation is not supported by this browser.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSubmit = () => {
     if (!validateForm()) {
       toast({
@@ -411,7 +469,12 @@ const InputPage = () => {
                     value={formData.location}
                     onChange={(e) => handleInputChange("location", e.target.value)}
                   />
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleLocationDetect}
+                    title="Auto-detect location"
+                  >
                     <MapPin className="h-4 w-4" />
                   </Button>
                 </div>
