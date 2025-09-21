@@ -96,10 +96,12 @@ export default {
           "gradient-hero": "var(--gradient-hero)",
           "gradient-card": "var(--gradient-card)",
           "gradient-accent": "var(--gradient-accent)",
+          "gradient-premium": "var(--gradient-premium)",
         },
         boxShadow: {
           "glow": "var(--shadow-glow)",
           "card": "var(--shadow-card)",
+          "premium": "var(--shadow-premium)",
         },
     },
   },
